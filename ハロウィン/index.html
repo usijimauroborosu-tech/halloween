@@ -68,6 +68,19 @@
             z-index: 100;
         }
         
+        #loadingMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6600;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-align: center;
+            z-index: 150;
+        }
+        
         @media (max-width: 768px) {
             #instructions {
                 font-size: 16px;
@@ -160,6 +173,8 @@
             <div>🍫 チョコレート: 50点 (速い)</div>
         </div>
         
+        <div id="loadingMessage">画像を読み込み中...</div>
+        
         <div id="speedUpMessage">スピードUP!</div>
         
         <div id="gameOver">
@@ -212,6 +227,7 @@
             const finalLevelElement = document.getElementById('finalLevel');
             const restartButton = document.getElementById('restartButton');
             const speedUpMessage = document.getElementById('speedUpMessage');
+            const loadingMessage = document.getElementById('loadingMessage');
 
             // Set canvas size
             function setCanvasSize() {
@@ -221,7 +237,7 @@
             setCanvasSize();
 
             // Game variables
-            let gameState = 'playing';
+            let gameState = 'loading';
             let score = 0;
             let lives = 3;
             let level = 1;
@@ -235,6 +251,10 @@
             let sweetImages = {};
             let randomCharacterImage = null;
             let isUsingTouch = false;
+            let imagesLoaded = 0;
+            let totalImages = 2;
+            let playerImageLoaded = false;
+            let randomCharacterImageLoaded = false;
 
             // Player object (positioned at bottom of screen)
             const player = {
@@ -264,15 +284,29 @@
                 chocolate: { color: '#8B4513', points: 50, speed: 6 }
             };
 
+            // Check if all images are loaded
+            function checkImagesLoaded() {
+                if (playerImageLoaded && randomCharacterImageLoaded) {
+                    loadingMessage.style.display = 'none';
+                    gameState = 'playing';
+                    requestAnimationFrame(gameLoop);
+                }
+            }
+
             // Load images
             function loadImages() {
                 // Load character image
                 const characterImg = new Image();
                 characterImg.onload = function() {
                     playerImage = characterImg;
+                    playerImageLoaded = true;
+                    checkImagesLoaded();
                 };
                 characterImg.onerror = function() {
+                    // PDF読み込み失敗時はデフォルト描画を使用
                     playerImage = null;
+                    playerImageLoaded = true;
+                    checkImagesLoaded();
                 };
                 characterImg.src = IMAGE_PATHS.character;
                 
@@ -280,9 +314,14 @@
                 const randomCharImg = new Image();
                 randomCharImg.onload = function() {
                     randomCharacterImage = randomCharImg;
+                    randomCharacterImageLoaded = true;
+                    checkImagesLoaded();
                 };
                 randomCharImg.onerror = function() {
+                    // PDF読み込み失敗時は非表示
                     randomCharacterImage = null;
+                    randomCharacterImageLoaded = true;
+                    checkImagesLoaded();
                 };
                 randomCharImg.src = IMAGE_PATHS.randomCharacter;
             }
@@ -414,14 +453,15 @@
 
             // Draw random character
             function drawRandomCharacter() {
-                // Only draw if the image is loaded
-                if (randomCharacterImage && randomCharacterImage.complete) {
+                // Only draw if the image is loaded and valid
+                if (randomCharacterImage && randomCharacterImage.complete && randomCharacterImage.naturalWidth > 0) {
                     const bounceOffset = Math.sin(randomCharacter.animationFrame) * 3;
                     const drawY = randomCharacter.y + bounceOffset;
                     ctx.drawImage(randomCharacterImage, randomCharacter.x, drawY, randomCharacter.width, randomCharacter.height);
                 }
-                // If image is not loaded, don't draw anything
+                // If image is not loaded or is invalid, don't draw anything
             }
+
             // Update player
             function updatePlayer() {
                 // Keyboard control
@@ -484,10 +524,11 @@
 
             // Draw player
             function drawPlayer() {
-                if (playerImage && playerImage.complete) {
+                // Only draw if the image is loaded and valid, or use fallback
+                if (playerImage && playerImage.complete && playerImage.naturalWidth > 0) {
                     ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
                 } else {
-                    // Default character with Halloween theme
+                    // Default character with Halloween theme (only shown if PDF failed to load)
                     ctx.fillStyle = '#FF6600';
                     ctx.fillRect(player.x, player.y, player.width, player.height);
                     
@@ -590,7 +631,6 @@
 
             // Start game
             loadImages();
-            requestAnimationFrame(gameLoop);
 
         } catch (error) {
             console.error('Game initialization error:', error);
