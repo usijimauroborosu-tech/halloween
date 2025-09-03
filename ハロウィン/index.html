@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <!-- ⭐ 追加されたセキュリティヘッダー ここから ⭐ -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline';    style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
+    <!-- ⭐ ここまで ⭐ -->
+    <title>ハロウィンキャンディキャッチゲーム</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000000;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: transparent;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ff6600;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(255, 102, 0, 0.5);
+            z-index: 100;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-align: center;
+            z-index: 100;
+        }
+        
+        #scoreInfo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-align: right;
+            z-index: 100;
+        }
+        
+        @media (max-width: 768px) {
+            #instructions {
+                font-size: 16px;
+                bottom: 30px;
+            }
+            #scoreInfo {
+                font-size: 14px;
+                top: 20px;
+            }
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(51, 10, 0, 0.9));
+            color: #ff6600;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 200;
+            border: 3px solid #ff6600;
+            box-shadow: 0 0 20px rgba(255, 102, 0, 0.5);
+        }
+        
+        #gameOver h2 {
+            font-size: 22px;
+            margin: 0 0 15px 0;
+        }
+        
+        #gameOver p {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        #restartButton {
+            background: linear-gradient(135deg, #ff6600, #ff4500);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+            border: 2px solid #ff8800;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        #restartButton:hover {
+            background: linear-gradient(135deg, #ff4500, #ff6600);
+            box-shadow: 0 0 15px rgba(255, 102, 0, 0.7);
+            transform: scale(1.05);
+        }
+        
+        #speedUpMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6600;
+            font-size: 32px;
+            font-weight: bold;
+            z-index: 150;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div>スコア: <span id="score">0</span></div>
+            <div>残りライフ: <span id="lives">3</span></div>
+            <div>レベル: <span id="level">1</span></div>
+        </div>
+        
+        <div id="instructions">
+            <div>タッチで移動</div>
+        </div>
+        
+        <div id="scoreInfo">
+            <div>🍬 キャンディ: 10点 (遅い)</div>
+            <div>🍭 ロリポップ: 30点 (普通)</div>
+            <div>🍫 チョコレート: 50点 (速い)</div>
+        </div>
+        
+        <div id="speedUpMessage">スピードUP!</div>
+        
+        <div id="gameOver">
+            <h2>ゲーム終了！</h2>
+            <p>最終スコア: <span id="finalScore">0</span></p>
+            <p>到達レベル: <span id="finalLevel">1</span></p>
+            <button id="restartButton">もう一度チャレンジ</button>
+        </div>
+    </div>
+
+    <script>
+    // ⭐ セキュリティ強化コード ここから ⭐
+    (function() {
+        'use strict';
+        
+        // コンソールでの実行を防止
+        if (typeof window !== 'undefined') {
+            const originalLog = console.log;
+            console.log = function() { /* ... */ };
+        }
+        
+        // 右クリック無効化
+        document.addEventListener('contextmenu', function(e) { /* ... */ });
+        
+        // キーボードショートカット無効化
+        document.addEventListener('keydown', function(e) { /* ... */ });
+        
+        // ドラッグ&ドロップ無効化
+        document.addEventListener('dragstart', function(e) { /* ... */ });
+        
+        // 選択無効化
+        document.addEventListener('selectstart', function(e) { /* ... */ });
+    })();
+    // ⭐ ここまで ⭐
+        try {
+            // PNG image paths
+            const IMAGE_PATHS = {
+                character: 'character.png',
+                randomCharacter: 'random_character.png'
+            };
+
+            // DOM elements
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreElement = document.getElementById('score');
+            const livesElement = document.getElementById('lives');
+            const levelElement = document.getElementById('level');
+            const gameOverDiv = document.getElementById('gameOver');
+            const finalScoreElement = document.getElementById('finalScore');
+            const finalLevelElement = document.getElementById('finalLevel');
+            const restartButton = document.getElementById('restartButton');
+            const speedUpMessage = document.getElementById('speedUpMessage');
+
+            // Set canvas size
+            function setCanvasSize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            setCanvasSize();
+
+            // Game variables
+            let gameState = 'playing';
+            let score = 0;
+            let lives = 3;
+            let level = 1;
+            let speedMultiplier = 1;
+            let sweets = [];
+            let lastSweetTime = 0;
+            let keys = {};
+            let mouseX = canvas.width / 2;
+            let touchX = canvas.width / 2;
+            let playerImage = null;
+            let sweetImages = {};
+            let randomCharacterImage = null;
+            let isUsingTouch = false;
+
+            // Player object (positioned at bottom of screen)
+            const player = {
+                x: canvas.width / 2 - 40,
+                y: canvas.height - 120,
+                width: 120,
+                height: 120,
+                speed: 8
+            };
+
+            // Random character object (positioned at top of screen)
+            const randomCharacter = {
+                x: Math.random() * Math.max(100, canvas.width - 60),
+                y: 50,
+                width: 80,
+                height: 80,
+                speed: 3,
+                direction: { x: 2, y: 1 },
+                lastDirectionChange: 0,
+                animationFrame: 0
+            };
+
+            // Sweet types with increased size (1.2x)
+            const sweetTypes = {
+                candy: { color: '#FF4444', points: 10, speed: 2 },
+                cookie: { color: '#DEB887', points: 30, speed: 4 },
+                chocolate: { color: '#8B4513', points: 50, speed: 6 }
+            };
+
+            // Load images
+            function loadImages() {
+                // Load character image
+                const characterImg = new Image();
+                characterImg.onload = function() {
+                    playerImage = characterImg;
+                };
+                characterImg.onerror = function() {
+                    playerImage = null;
+                };
+                characterImg.src = IMAGE_PATHS.character;
+                
+                // Load random character image
+                const randomCharImg = new Image();
+                randomCharImg.onload = function() {
+                    randomCharacterImage = randomCharImg;
+                };
+                randomCharImg.onerror = function() {
+                    randomCharacterImage = null;
+                };
+                randomCharImg.src = IMAGE_PATHS.randomCharacter;
+            }
+
+            // Event listeners
+            document.addEventListener('keydown', function(e) {
+                keys[e.key] = true;
+            });
+
+            document.addEventListener('keyup', function(e) {
+                keys[e.key] = false;
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isUsingTouch) {
+                    mouseX = e.clientX;
+                }
+            });
+
+            // Touch events
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                isUsingTouch = true;
+                const touch = e.touches[0];
+                touchX = touch.clientX;
+            });
+
+            canvas.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                isUsingTouch = true;
+                const touch = e.touches[0];
+                touchX = touch.clientX;
+            });
+
+            canvas.addEventListener('touchend', function(e) {
+                e.preventDefault();
+            });
+
+            canvas.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+
+            restartButton.addEventListener('click', restartGame);
+
+            // Show speed up message animation
+            function showSpeedUpMessage() {
+                speedUpMessage.style.opacity = '1';
+                speedUpMessage.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                
+                setTimeout(() => {
+                    speedUpMessage.style.opacity = '0';
+                    speedUpMessage.style.transform = 'translate(-50%, -50%) scale(1)';
+                }, 2000);
+            }
+
+            // Update score and check for level up
+            function updateScore(points) {
+                const oldScore = score;
+                score += points;
+                scoreElement.textContent = score;
+                
+                // Check for level up (every 1000 points)
+                const oldLevel = Math.floor(oldScore / 1000) + 1;
+                const newLevel = Math.floor(score / 1000) + 1;
+                
+                if (newLevel > oldLevel) {
+                    level = newLevel;
+                    speedMultiplier *= 1.2;
+                    levelElement.textContent = level;
+                    showSpeedUpMessage();
+                }
+            }
+
+            // Create sweet with 1.2x size
+            function createSweet() {
+                const types = Object.keys(sweetTypes);
+                const type = types[Math.floor(Math.random() * types.length)];
+                const sweetType = sweetTypes[type];
+                
+                return {
+                    x: Math.random() * (canvas.width - 62),
+                    y: -62,
+                    width: 62, // 52 * 1.2 = 62.4 ≈ 62
+                    height: 62,
+                    type: type,
+                    speed: sweetType.speed * speedMultiplier,
+                    points: sweetType.points,
+                    color: sweetType.color
+                };
+            }
+
+            // Update random character
+            function updateRandomCharacter(currentTime) {
+                // Change direction randomly
+                if (currentTime - randomCharacter.lastDirectionChange > 800 + Math.random() * 1200) {
+                    const angle = Math.random() * Math.PI * 2;
+                    randomCharacter.direction.x = Math.cos(angle) * (1 + Math.random() * 2);
+                    randomCharacter.direction.y = Math.sin(angle) * (0.5 + Math.random() * 1);
+                    randomCharacter.lastDirectionChange = currentTime;
+                }
+
+                // Update position
+                randomCharacter.x += randomCharacter.direction.x * randomCharacter.speed;
+                randomCharacter.y += randomCharacter.direction.y * randomCharacter.speed;
+
+                // Bounce off walls (horizontal)
+                if (randomCharacter.x <= 0) {
+                    randomCharacter.direction.x = Math.abs(randomCharacter.direction.x);
+                    randomCharacter.x = 0;
+                }
+                if (randomCharacter.x >= canvas.width - randomCharacter.width) {
+                    randomCharacter.direction.x = -Math.abs(randomCharacter.direction.x);
+                    randomCharacter.x = canvas.width - randomCharacter.width;
+                }
+
+                // Keep in upper portion of screen
+                const maxY = canvas.height * 0.5 - randomCharacter.height;
+                if (randomCharacter.y <= 30) {
+                    randomCharacter.direction.y = Math.abs(randomCharacter.direction.y);
+                    randomCharacter.y = 30;
+                }
+                if (randomCharacter.y >= maxY) {
+                    randomCharacter.direction.y = -Math.abs(randomCharacter.direction.y);
+                    randomCharacter.y = maxY;
+                }
+
+                randomCharacter.animationFrame += 0.2;
+            }
+
+            // Draw random character
+            function drawRandomCharacter() {
+                // Only draw if the image is loaded
+                if (randomCharacterImage && randomCharacterImage.complete) {
+                    const bounceOffset = Math.sin(randomCharacter.animationFrame) * 3;
+                    const drawY = randomCharacter.y + bounceOffset;
+                    ctx.drawImage(randomCharacterImage, randomCharacter.x, drawY, randomCharacter.width, randomCharacter.height);
+                }
+                // If image is not loaded, don't draw anything
+            }
+            // Update player
+            function updatePlayer() {
+                // Keyboard control
+                if (keys['ArrowLeft'] && player.x > 0) {
+                    player.x -= player.speed;
+                    isUsingTouch = false;
+                }
+                if (keys['ArrowRight'] && player.x < canvas.width - player.width) {
+                    player.x += player.speed;
+                    isUsingTouch = false;
+                }
+                
+                // Mouse/Touch control
+                let targetX = isUsingTouch ? touchX : mouseX;
+                const playerCenterX = targetX;
+                const newPlayerX = playerCenterX - player.width / 2;
+                const clampedX = Math.max(0, Math.min(canvas.width - player.width, newPlayerX));
+                
+                const diff = clampedX - player.x;
+                const moveSpeed = Math.min(Math.abs(diff), player.speed * 2);
+                
+                if (Math.abs(diff) > 2) {
+                    player.x += diff > 0 ? moveSpeed : -moveSpeed;
+                }
+                
+                // Final bounds check
+                player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            }
+
+            // Update sweets
+            function updateSweets() {
+                for (let i = sweets.length - 1; i >= 0; i--) {
+                    const sweet = sweets[i];
+                    sweet.y += sweet.speed;
+                    
+                    // Check collision with player
+                    const hitboxHeight = player.height * 0.3;
+                    if (sweet.x < player.x + player.width &&
+                        sweet.x + sweet.width > player.x &&
+                        sweet.y < player.y + hitboxHeight &&
+                        sweet.y + sweet.height > player.y) {
+                        
+                        updateScore(sweet.points);
+                        sweets.splice(i, 1);
+                        continue;
+                    }
+                    
+                    // Remove sweets that fell off screen
+                    if (sweet.y > canvas.height) {
+                        sweets.splice(i, 1);
+                        lives--;
+                        livesElement.textContent = lives;
+                        
+                        if (lives <= 0) {
+                            gameOver();
+                        }
+                    }
+                }
+            }
+
+            // Draw player
+            function drawPlayer() {
+                if (playerImage && playerImage.complete) {
+                    ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+                } else {
+                    // Default character with Halloween theme
+                    ctx.fillStyle = '#FF6600';
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+                    
+                    // Eyes
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(player.x + 15, player.y + 15, 12, 12);
+                    ctx.fillRect(player.x + 53, player.y + 15, 12, 12);
+                    
+                    // Pupils
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(player.x + 18, player.y + 18, 6, 6);
+                    ctx.fillRect(player.x + 56, player.y + 18, 6, 6);
+                    
+                    // Mouth
+                    ctx.fillStyle = '#FF4500';
+                    ctx.fillRect(player.x + 25, player.y + 45, 30, 8);
+                }
+            }
+
+            // Draw sweets
+            function drawSweets() {
+                sweets.forEach(function(sweet) {
+                    // Use emoji fallback (larger size)
+                    ctx.font = '38px Arial'; // Increased from 32px to 38px (1.2x)
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const emoji = sweet.type === 'candy' ? '🍬' : sweet.type === 'cookie' ? '🍭' : '🍫';
+                    ctx.fillText(emoji, sweet.x + sweet.width/2, sweet.y + sweet.height/2);
+                });
+            }
+
+            // Game loop
+            function gameLoop(currentTime) {
+                if (gameState !== 'playing') return;
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Update
+                updateRandomCharacter(currentTime);
+                updatePlayer();
+                updateSweets();
+                
+                // Spawn sweets
+                if (currentTime - lastSweetTime > 1000 + Math.random() * 1000) {
+                    sweets.push(createSweet());
+                    lastSweetTime = currentTime;
+                }
+                
+                // Draw
+                drawRandomCharacter();
+                drawPlayer();
+                drawSweets();
+                
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Game over
+            function gameOver() {
+                gameState = 'gameOver';
+                finalScoreElement.textContent = score;
+                finalLevelElement.textContent = level;
+                gameOverDiv.style.display = 'block';
+            }
+
+            // Restart game
+            function restartGame() {
+                gameState = 'playing';
+                score = 0;
+                lives = 3;
+                level = 1;
+                speedMultiplier = 1;
+                sweets = [];
+                player.x = canvas.width / 2 - player.width / 2;
+                player.y = canvas.height - 120;
+                
+                randomCharacter.x = Math.random() * Math.max(100, canvas.width - randomCharacter.width);
+                randomCharacter.y = 50;
+                randomCharacter.direction.x = (Math.random() - 0.5) * 4;
+                randomCharacter.direction.y = (Math.random() - 0.5) * 2;
+                randomCharacter.lastDirectionChange = 0;
+                randomCharacter.animationFrame = 0;
+                
+                scoreElement.textContent = score;
+                livesElement.textContent = lives;
+                levelElement.textContent = level;
+                gameOverDiv.style.display = 'none';
+                speedUpMessage.style.opacity = '0';
+                lastSweetTime = 0;
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Resize handler
+            window.addEventListener('resize', function() {
+                setCanvasSize();
+                player.x = Math.min(player.x, canvas.width - player.width);
+                player.y = canvas.height - 120;
+                randomCharacter.x = Math.min(randomCharacter.x, canvas.width - randomCharacter.width);
+            });
+
+            // Start game
+            loadImages();
+            requestAnimationFrame(gameLoop);
+
+        } catch (error) {
+            console.error('Game initialization error:', error);
+            document.body.innerHTML = '<h1 style="color: #ff6600; text-align: center; margin-top: 50px;">ゲームの読み込みに失敗しました。ページを再読み込みしてください。</h1>';
+        }
+    </script>
+</body>
+</html>
