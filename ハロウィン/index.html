@@ -152,6 +152,21 @@
             white-space: nowrap;
         }
     </style>
+
+<!-- Google Analytics（個人情報送信なしの最小限設定） -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKE70Z2MZJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  // 個人情報を送らない最小限のページビュー計測
+  gtag('config', 'G-ZKE70Z2MZJ', {
+    'anonymize_ip': true,    // IPアドレスを匿名化
+    'send_page_view': true   // ページビューのみ送信
+  });
+</script>
+
 </head>
 <body>
     <div id="gameContainer">
@@ -627,6 +642,14 @@
                 player.x = Math.min(player.x, canvas.width - player.width);
                 player.y = canvas.height - 120;
                 randomCharacter.x = Math.min(randomCharacter.x, canvas.width - randomCharacter.width);
+            });
+            
+            // Orientation change handler
+            window.addEventListener('orientationchange', function() {
+                setTimeout(function() {
+                    setCanvasSize();
+                    updateBackgroundForOrientation();
+                }, 100);
             });
 
             // Start game
