@@ -20,6 +20,22 @@
             background: #000000;
             font-family: 'Arial', sans-serif;
             overflow: hidden;
+            transition: background 0.5s ease;
+        }
+        
+        /* 縦向き（ポートレート）の場合の背景画像 */
+        @media screen and (orientation: portrait) {
+            body {
+                background: url('background.jpg') center center/cover no-repeat;
+                background-color: #000000; /* 画像が読み込めない場合のフォールバック */
+            }
+        }
+        
+        /* 横向き（ランドスケープ）の場合は黒背景 */
+        @media screen and (orientation: landscape) {
+            body {
+                background: #000000;
+            }
         }
         
         #gameContainer {
@@ -251,6 +267,14 @@
             }
             setCanvasSize();
 
+            // 背景の向きを更新する関数
+            function updateBackgroundForOrientation() {
+                const isPortrait = window.innerHeight > window.innerWidth;
+                // CSSのメディアクエリで自動的に背景が変わるため、特別な処理は不要
+                // 必要に応じて、ここで追加の処理を行うことができます
+                console.log(`画面の向き: ${isPortrait ? 'ポートレート（縦向き）' : 'ランドスケープ（横向き）'}`);
+            }
+
             // Game variables
             let gameState = 'loading';
             let score = 0;
@@ -318,7 +342,7 @@
                     checkImagesLoaded();
                 };
                 characterImg.onerror = function() {
-                    // PDF読み込み失敗時はデフォルト描画を使用
+                    // 画像読み込み失敗時はデフォルト描画を使用
                     playerImage = null;
                     playerImageLoaded = true;
                     checkImagesLoaded();
@@ -333,7 +357,7 @@
                     checkImagesLoaded();
                 };
                 randomCharImg.onerror = function() {
-                    // PDF読み込み失敗時は非表示
+                    // 画像読み込み失敗時は非表示
                     randomCharacterImage = null;
                     randomCharacterImageLoaded = true;
                     checkImagesLoaded();
@@ -543,7 +567,7 @@
                 if (playerImage && playerImage.complete && playerImage.naturalWidth > 0) {
                     ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
                 } else {
-                    // Default character with Halloween theme (only shown if PDF failed to load)
+                    // Default character with Halloween theme (only shown if image failed to load)
                     ctx.fillStyle = '#FF6600';
                     ctx.fillRect(player.x, player.y, player.width, player.height);
                     
@@ -642,6 +666,7 @@
                 player.x = Math.min(player.x, canvas.width - player.width);
                 player.y = canvas.height - 120;
                 randomCharacter.x = Math.min(randomCharacter.x, canvas.width - randomCharacter.width);
+                updateBackgroundForOrientation();
             });
             
             // Orientation change handler
@@ -651,6 +676,9 @@
                     updateBackgroundForOrientation();
                 }, 100);
             });
+
+            // 初期の向きを設定
+            updateBackgroundForOrientation();
 
             // Start game
             loadImages();
