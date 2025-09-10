@@ -217,6 +217,81 @@
     </div>
 
     <script>
+    // ⭐ 時間制限チェック機能 ここから ⭐
+    (function() {
+        'use strict';
+        
+        // 11月1日12時以降はアクセス不可
+        function checkTimeLimit() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const deadline = new Date(currentYear, 10, 1, 12, 0, 0); // 11月1日12時（月は0から始まる）
+            
+            if (now >= deadline) {
+                // アクセス制限メッセージを表示
+                document.body.innerHTML = `
+                    <div style="
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        background: linear-gradient(135deg, #000000, #330a00);
+                        color: #ff6600;
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                        padding: 20px;
+                        box-sizing: border-box;
+                    ">
+                        <div style="
+                            background: rgba(0,0,0,0.8);
+                            padding: 40px;
+                            border-radius: 15px;
+                            border: 3px solid #ff6600;
+                            box-shadow: 0 0 30px rgba(255, 102, 0, 0.3);
+                            max-width: 500px;
+                        ">
+                            <h1 style="
+                                font-size: 32px;
+                                margin: 0 0 20px 0;
+                                text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+                            ">🎃 ハロウィン終了 🎃</h1>
+                            <p style="
+                                font-size: 18px;
+                                margin: 15px 0;
+                                line-height: 1.6;
+                                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                            ">ハロウィンキャンディキャッチゲームの<br>プレイ期間は終了しました。</p>
+                            <p style="
+                                font-size: 16px;
+                                margin: 15px 0;
+                                color: #ffaa44;
+                                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                            ">また来年のハロウィンでお会いしましょう！</p>
+                            <p style="
+                                font-size: 14px;
+                                margin: 20px 0 0 0;
+                                color: #cc8833;
+                                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                            ">アクセス期限: 11月1日 11:59まで</p>
+                        </div>
+                    </div>
+                `;
+                
+                // JavaScriptの実行を停止
+                throw new Error('Access denied: Game period has ended');
+            }
+        }
+        
+        // 時間制限をチェック
+        checkTimeLimit();
+        
+        // 定期的に時間をチェック（5分ごと）
+        setInterval(checkTimeLimit, 5 * 60 * 1000);
+        
+    })();
+    // ⭐ ここまで ⭐
+
     // ⭐ セキュリティ強化コード ここから ⭐
     (function() {
         'use strict';
@@ -690,5 +765,3 @@
     </script>
 </body>
 </html>
-
-
