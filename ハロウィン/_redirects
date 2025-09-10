@@ -1,0 +1,19 @@
+# Netlify _redirects ファイル
+# このファイルをプロジェクトのルートディレクトリに配置してください
+
+# HTTPからHTTPSへの強制リダイレクト
+http://yoursite.netlify.app/* https://yoursite.netlify.app/:splat 301!
+
+# SPAルーティングのフォールバック（必要に応じて）
+/* /index.html 200
+
+# 特定のファイルやパスへのアクセスを制限
+/admin/* /index.html 404
+/config/* /index.html 404
+/.env* /index.html 404
+/package.json /index.html 404
+/node_modules/* /index.html 404
+
+# 日本時間での時間制限リダイレクト（オプション - サーバーサイドでの制御）
+# 注意: これはNetlifyの機能だけでは完全な時間制限は難しいです
+# JavaScriptでの制御をメインとして、補助的に使用してください
