@@ -50,6 +50,67 @@
             background: transparent;
         }
         
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        #startScreen h1 {
+            font-size: 32px;
+            color: #ff6600;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+        
+        #startScreen .instructions {
+            font-size: 18px;
+            line-height: 1.6;
+            text-align: center;
+            margin-bottom: 40px;
+            max-width: 600px;
+        }
+        
+        #startScreen .rules {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        #startScreen .warning {
+            color: #ff4444;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        #startButton {
+            background: #ff6600;
+            color: black;
+            border: none;
+            padding: 20px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 8px;
+        }
+        
+        #startButton:hover {
+            background: #ff8800;
+            transform: scale(1.05);
+        }
+        
         #ui {
             position: absolute;
             top: 20px;
@@ -105,6 +166,12 @@
             #scoreInfo {
                 font-size: 14px;
                 top: 20px;
+            }
+            #startScreen h1 {
+                font-size: 28px;
+            }
+            #startScreen .instructions {
+                font-size: 16px;
             }
         }
         
@@ -167,6 +234,21 @@
             pointer-events: none;
             white-space: nowrap;
         }
+        
+        #ghostHitMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff4444;
+            font-size: 28px;
+            font-weight: bold;
+            z-index: 150;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
     </style>
 
 <!-- Google Analytics（個人情報送信なしの最小限設定） -->
@@ -186,6 +268,21 @@
 </head>
 <body>
     <div id="gameContainer">
+        <div id="startScreen">
+            <h1>🎃 ハロウィンキャンディキャッチ 🎃</h1>
+            <div class="instructions">
+                <div class="rules">📱 タッチでキャラクターを操作</div>
+                <div class="rules"> お菓子をキャッチしてポイントを獲得</div>
+                <div class="rules">• 🍬 キャンディ: 10点</div>
+                <div class="rules">• 🍭 ロリポップ: 30点</div>
+                <div class="rules">• 🍫 チョコレート: 50点</div>
+                <div class="warning">👻 おばけに注意！キャッチするとライフ－１ & スピードアップ！</div>
+                <div class="rules">💔 ライフが０になるとゲームオーバー</div>
+                <div class="rules">🆙 1,000ポイントごとにレベルアップ</div>
+            </div>
+            <button id="startButton">ゲームスタート</button>
+        </div>
+        
         <canvas id="gameCanvas"></canvas>
         
         <div id="ui">
@@ -199,14 +296,16 @@
         </div>
         
         <div id="scoreInfo">
-            <div>🍬 キャンディ: 10点 (遅い)</div>
-            <div>🍭 ロリポップ: 30点 (普通)</div>
-            <div>🍫 チョコレート: 50点 (速い)</div>
+            <div>🍬 キャンディ: 10点</div>
+            <div>🍭 ロリポップ: 30点</div>
+            <div>🍫 チョコレート: 50点</div>
+            <div style="color: #ff4444;">👻 おばけ: ライフ-1</div>
         </div>
         
         <div id="loadingMessage">画像を読み込み中...</div>
         
         <div id="speedUpMessage">スピードUP!</div>
+        <div id="ghostHitMessage">おばけ！スピードアップ！</div>
         
         <div id="gameOver">
             <h2>ゲーム<br>終了！</h2>
@@ -333,7 +432,10 @@
             const finalLevelElement = document.getElementById('finalLevel');
             const restartButton = document.getElementById('restartButton');
             const speedUpMessage = document.getElementById('speedUpMessage');
+            const ghostHitMessage = document.getElementById('ghostHitMessage');
             const loadingMessage = document.getElementById('loadingMessage');
+            const startScreen = document.getElementById('startScreen');
+            const startButton = document.getElementById('startButton');
 
             // Set canvas size
             function setCanvasSize() {
@@ -345,19 +447,19 @@
             // 背景の向きを更新する関数
             function updateBackgroundForOrientation() {
                 const isPortrait = window.innerHeight > window.innerWidth;
-                // CSSのメディアクエリで自動的に背景が変わるため、特別な処理は不要
-                // 必要に応じて、ここで追加の処理を行うことができます
                 console.log(`画面の向き: ${isPortrait ? 'ポートレート（縦向き）' : 'ランドスケープ（横向き）'}`);
             }
 
             // Game variables
-            let gameState = 'loading';
+            let gameState = 'start';
             let score = 0;
             let lives = 3;
             let level = 1;
             let speedMultiplier = 1;
             let sweets = [];
+            let ghosts = [];
             let lastSweetTime = 0;
+            let lastGhostTime = 0;
             let keys = {};
             let mouseX = canvas.width / 2;
             let touchX = canvas.width / 2;
@@ -398,6 +500,12 @@
                 chocolate: { color: '#8B4513', points: 50, speed: 6 }
             };
 
+            // Start button event
+            startButton.addEventListener('click', function() {
+                startScreen.style.display = 'none';
+                loadImages();
+            });
+
             // Check if all images are loaded
             function checkImagesLoaded() {
                 if (playerImageLoaded && randomCharacterImageLoaded) {
@@ -409,6 +517,9 @@
 
             // Load images
             function loadImages() {
+                gameState = 'loading';
+                loadingMessage.style.display = 'block';
+                
                 // Load character image
                 const characterImg = new Image();
                 characterImg.onload = function() {
@@ -491,6 +602,17 @@
                 }, 2000);
             }
 
+            // Show ghost hit message animation
+            function showGhostHitMessage() {
+                ghostHitMessage.style.opacity = '1';
+                ghostHitMessage.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                
+                setTimeout(() => {
+                    ghostHitMessage.style.opacity = '0';
+                    ghostHitMessage.style.transform = 'translate(-50%, -50%) scale(1)';
+                }, 2000);
+            }
+
             // Update score and check for level up
             function updateScore(points) {
                 const oldScore = score;
@@ -524,6 +646,18 @@
                     speed: sweetType.speed * speedMultiplier,
                     points: sweetType.points,
                     color: sweetType.color
+                };
+            }
+
+            // Create ghost
+            function createGhost() {
+                return {
+                    x: Math.random() * (canvas.width - 60),
+                    y: -60,
+                    width: 60,
+                    height: 60,
+                    speed: 3 * speedMultiplier,
+                    animationFrame: 0
                 };
             }
 
@@ -636,6 +770,40 @@
                 }
             }
 
+            // Update ghosts
+            function updateGhosts() {
+                for (let i = ghosts.length - 1; i >= 0; i--) {
+                    const ghost = ghosts[i];
+                    ghost.y += ghost.speed;
+                    ghost.animationFrame += 0.3;
+                    
+                    // Check collision with player
+                    const hitboxHeight = player.height * 0.3;
+                    if (ghost.x < player.x + player.width &&
+                        ghost.x + ghost.width > player.x &&
+                        ghost.y < player.y + hitboxHeight &&
+                        ghost.y + ghost.height > player.y) {
+                        
+                        // Ghost hit - lose life and increase speed
+                        lives--;
+                        livesElement.textContent = lives;
+                        speedMultiplier *= 1.5;
+                        showGhostHitMessage();
+                        ghosts.splice(i, 1);
+                        
+                        if (lives <= 0) {
+                            gameOver();
+                        }
+                        continue;
+                    }
+                    
+                    // Remove ghosts that fell off screen
+                    if (ghost.y > canvas.height) {
+                        ghosts.splice(i, 1);
+                    }
+                }
+            }
+
             // Draw player
             function drawPlayer() {
                 // Only draw if the image is loaded and valid, or use fallback
@@ -674,6 +842,21 @@
                 });
             }
 
+            // Draw ghosts
+            function drawGhosts() {
+                ghosts.forEach(function(ghost) {
+                    ctx.font = '36px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Add floating animation
+                    const floatOffset = Math.sin(ghost.animationFrame) * 5;
+                    const drawY = ghost.y + ghost.height/2 + floatOffset;
+                    
+                    ctx.fillText('👻', ghost.x + ghost.width/2, drawY);
+                });
+            }
+
             // Game loop
             function gameLoop(currentTime) {
                 if (gameState !== 'playing') return;
@@ -685,6 +868,7 @@
                 updateRandomCharacter(currentTime);
                 updatePlayer();
                 updateSweets();
+                updateGhosts();
                 
                 // Spawn sweets
                 if (currentTime - lastSweetTime > 1000 + Math.random() * 1000) {
@@ -692,10 +876,17 @@
                     lastSweetTime = currentTime;
                 }
                 
+                // Spawn ghosts (less frequently than sweets)
+                if (currentTime - lastGhostTime > 3000 + Math.random() * 2000) {
+                    ghosts.push(createGhost());
+                    lastGhostTime = currentTime;
+                }
+                
                 // Draw
                 drawRandomCharacter();
                 drawPlayer();
                 drawSweets();
+                drawGhosts();
                 
                 requestAnimationFrame(gameLoop);
             }
@@ -716,6 +907,7 @@
                 level = 1;
                 speedMultiplier = 1;
                 sweets = [];
+                ghosts = [];
                 player.x = canvas.width / 2 - player.width / 2;
                 player.y = canvas.height - 120;
                 
@@ -731,7 +923,9 @@
                 levelElement.textContent = level;
                 gameOverDiv.style.display = 'none';
                 speedUpMessage.style.opacity = '0';
+                ghostHitMessage.style.opacity = '0';
                 lastSweetTime = 0;
+                lastGhostTime = 0;
                 requestAnimationFrame(gameLoop);
             }
 
@@ -755,9 +949,6 @@
             // 初期の向きを設定
             updateBackgroundForOrientation();
 
-            // Start game
-            loadImages();
-
         } catch (error) {
             console.error('Game initialization error:', error);
             document.body.innerHTML = '<h1 style="color: #ff6600; text-align: center; margin-top: 50px;">ゲームの読み込みに失敗しました。ページを再読み込みしてください。</h1>';
@@ -765,5 +956,3 @@
     </script>
 </body>
 </html>
-
-
