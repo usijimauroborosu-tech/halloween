@@ -167,11 +167,20 @@
                 font-size: 14px;
                 top: 20px;
             }
-            #startScreen h1 {
-                font-size: 28px;
-            }
             #startScreen .instructions {
                 font-size: 16px;
+            }
+            #startScreen .rules {
+                font-size: 14px;
+                margin-bottom: 6px;
+            }
+            #startScreen h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+            #startButton {
+                padding: 16px 32px;
+                font-size: 18px;
             }
         }
         
@@ -271,14 +280,14 @@
         <div id="startScreen">
             <h1>🎃 ハロウィンキャンディキャッチ 🎃</h1>
             <div class="instructions">
-                <div class="rules">「れいにゃん･せいにゃん」を操作</div>
-                <div class="rules"> お菓子をキャッチしてポイントを獲得</div>
+                <div class="rules">📱 タッチまたは矢印キーでキャラクターを操作</div>
+                <div class="rules">🍬 キャンディをキャッチしてポイントを獲得</div>
                 <div class="rules">• 🍬 キャンディ: 10点</div>
                 <div class="rules">• 🍭 ロリポップ: 30点</div>
                 <div class="rules">• 🍫 チョコレート: 50点</div>
-                <div class="warning">👻 おばけに注意！キャッチするとライフ－１ & スピードアップ！</div>
-                <div class="rules">💔 ライフが０になるとゲームオーバー</div>
-                <div class="rules">🆙 1,000ポイントごとにレベルアップ</div>
+                <div class="warning">👻 おばけに注意！キャッチするとライフ-1 & スピードアップ！</div>
+                <div class="rules">💔 ライフが0になるとゲームオーバー</div>
+                <div class="rules">🆙 1000ポイントごとにレベルアップ</div>
             </div>
             <button id="startButton">ゲームスタート</button>
         </div>
@@ -296,9 +305,9 @@
         </div>
         
         <div id="scoreInfo">
-            <div>🍬 キャンディ: 10点</div>
-            <div>🍭 ロリポップ: 30点</div>
-            <div>🍫 チョコレート: 50点</div>
+            <div>🍬 キャンディ: 10点 (遅い)</div>
+            <div>🍭 ロリポップ: 30点 (普通)</div>
+            <div>🍫 チョコレート: 50点 (速い)</div>
             <div style="color: #ff4444;">👻 おばけ: ライフ-1</div>
         </div>
         
@@ -956,5 +965,3 @@
     </script>
 </body>
 </html>
-
-
