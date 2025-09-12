@@ -1,0 +1,630 @@
+    // ⭐ 時間制限チェック機能 ここから ⭐
+    (function() {
+        'use strict';
+        
+        // 11月1日12時以降はアクセス不可
+        function checkTimeLimit() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const deadline = new Date(currentYear, 10, 1, 12, 0, 0); // 11月1日12時（月は0から始まる）
+            
+            if (now >= deadline) {
+                // アクセス制限メッセージを表示
+                document.body.innerHTML = `
+                    <div style="
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        background: linear-gradient(135deg, #000000, #330a00);
+                        color: #ff6600;
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                        padding: 20px;
+                        box-sizing: border-box;
+                    ">
+                        <div style="
+                            background: rgba(0,0,0,0.8);
+                            padding: 40px;
+                            border-radius: 15px;
+                            border: 3px solid #ff6600;
+                            box-shadow: 0 0 30px rgba(255, 102, 0, 0.3);
+                            max-width: 500px;
+                        ">
+                            <h1 style="
+                                font-size: 32px;
+                                margin: 0 0 20px 0;
+                                text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+                            ">🎃 ハロウィン終了 🎃</h1>
+                            <p style="
+                                font-size: 18px;
+                                margin: 15px 0;
+                                line-height: 1.6;
+                                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                            ">ハロウィンキャンディキャッチゲームの<br>プレイ期間は終了しました。</p>
+                            <p style="
+                                font-size: 16px;
+                                margin: 15px 0;
+                                color: #ffaa44;
+                                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                            ">また来年のハロウィンでお会いしましょう！</p>
+                            <p style="
+                                font-size: 14px;
+                                margin: 20px 0 0 0;
+                                color: #cc8833;
+                                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                            ">アクセス期限: 11月1日 11:59まで</p>
+                        </div>
+                    </div>
+                `;
+                
+                // JavaScriptの実行を停止
+                throw new Error('Access denied: Game period has ended');
+            }
+        }
+        
+        // 時間制限をチェック
+        checkTimeLimit();
+        
+        // 定期的に時間をチェック（5分ごと）
+        setInterval(checkTimeLimit, 5 * 60 * 1000);
+        
+    })();
+    // ⭐ ここまで ⭐
+
+    // ⭐ セキュリティ強化コード ここから ⭐
+    (function() {
+        'use strict';
+        
+        // コンソールでの実行を防止
+        if (typeof window !== 'undefined') {
+            const originalLog = console.log;
+            console.log = function() { /* ... */ };
+        }
+        
+        // 右クリック無効化
+        document.addEventListener('contextmenu', function(e) { /* ... */ });
+        
+        // キーボードショートカット無効化
+        document.addEventListener('keydown', function(e) { /* ... */ });
+        
+        // ドラッグ&ドロップ無効化
+        document.addEventListener('dragstart', function(e) { /* ... */ });
+        
+        // 選択無効化
+        document.addEventListener('selectstart', function(e) { /* ... */ });
+    })();
+    // ⭐ ここまで ⭐
+        try {
+            // PNG image paths
+            const IMAGE_PATHS = {
+                character: 'character.png',
+                randomCharacter: 'random_character.png'
+            };
+
+            // DOM elements
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreElement = document.getElementById('score');
+            const livesElement = document.getElementById('lives');
+            const levelElement = document.getElementById('level');
+            const gameOverDiv = document.getElementById('gameOver');
+            const finalScoreElement = document.getElementById('finalScore');
+            const finalLevelElement = document.getElementById('finalLevel');
+            const restartButton = document.getElementById('restartButton');
+            const speedUpMessage = document.getElementById('speedUpMessage');
+            const ghostHitMessage = document.getElementById('ghostHitMessage');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const startScreen = document.getElementById('startScreen');
+            const startButton = document.getElementById('startButton');
+
+            // Set canvas size
+            function setCanvasSize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            setCanvasSize();
+
+            // 背景の向きを更新する関数
+            function updateBackgroundForOrientation() {
+                const isPortrait = window.innerHeight > window.innerWidth;
+                console.log(`画面の向き: ${isPortrait ? 'ポートレート（縦向き）' : 'ランドスケープ（横向き）'}`);
+            }
+
+            // Game variables
+            let gameState = 'start';
+            let score = 0;
+            let lives = 3;
+            let level = 1;
+            let speedMultiplier = 1;
+            let sweets = [];
+            let ghosts = [];
+            let lastSweetTime = 0;
+            let lastGhostTime = 0;
+            let keys = {};
+            let mouseX = canvas.width / 2;
+            let touchX = canvas.width / 2;
+            let playerImage = null;
+            let sweetImages = {};
+            let randomCharacterImage = null;
+            let isUsingTouch = false;
+            let imagesLoaded = 0;
+            let totalImages = 2;
+            let playerImageLoaded = false;
+            let randomCharacterImageLoaded = false;
+
+            // Player object (positioned at bottom of screen)
+            const player = {
+                x: canvas.width / 2 - 40,
+                y: canvas.height - 120,
+                width: 120,
+                height: 120,
+                speed: 8
+            };
+
+            // Random character object (positioned at top of screen)
+            const randomCharacter = {
+                x: Math.random() * Math.max(100, canvas.width - 60),
+                y: 50,
+                width: 80,
+                height: 80,
+                speed: 3,
+                direction: { x: 2, y: 1 },
+                lastDirectionChange: 0,
+                animationFrame: 0
+            };
+
+            // Sweet types with increased size (1.2x)
+            const sweetTypes = {
+                candy: { color: '#FF4444', points: 10, speed: 2 },
+                cookie: { color: '#DEB887', points: 30, speed: 4 },
+                chocolate: { color: '#8B4513', points: 50, speed: 6 }
+            };
+
+            // Start button event
+            startButton.addEventListener('click', function() {
+                startScreen.style.display = 'none';
+                loadImages();
+            });
+
+            // Check if all images are loaded
+            function checkImagesLoaded() {
+                if (playerImageLoaded && randomCharacterImageLoaded) {
+                    loadingMessage.style.display = 'none';
+                    gameState = 'playing';
+                    requestAnimationFrame(gameLoop);
+                }
+            }
+
+            // Load images
+            function loadImages() {
+                gameState = 'loading';
+                loadingMessage.style.display = 'block';
+                
+                // Load character image
+                const characterImg = new Image();
+                characterImg.onload = function() {
+                    playerImage = characterImg;
+                    playerImageLoaded = true;
+                    checkImagesLoaded();
+                };
+                characterImg.onerror = function() {
+                    // 画像読み込み失敗時はデフォルト描画を使用
+                    playerImage = null;
+                    playerImageLoaded = true;
+                    checkImagesLoaded();
+                };
+                characterImg.src = IMAGE_PATHS.character;
+                
+                // Load random character image
+                const randomCharImg = new Image();
+                randomCharImg.onload = function() {
+                    randomCharacterImage = randomCharImg;
+                    randomCharacterImageLoaded = true;
+                    checkImagesLoaded();
+                };
+                randomCharImg.onerror = function() {
+                    // 画像読み込み失敗時は非表示
+                    randomCharacterImage = null;
+                    randomCharacterImageLoaded = true;
+                    checkImagesLoaded();
+                };
+                randomCharImg.src = IMAGE_PATHS.randomCharacter;
+            }
+
+            // Event listeners
+            document.addEventListener('keydown', function(e) {
+                keys[e.key] = true;
+            });
+
+            document.addEventListener('keyup', function(e) {
+                keys[e.key] = false;
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isUsingTouch) {
+                    mouseX = e.clientX;
+                }
+            });
+
+            // Touch events
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                isUsingTouch = true;
+                const touch = e.touches[0];
+                touchX = touch.clientX;
+            });
+
+            canvas.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                isUsingTouch = true;
+                const touch = e.touches[0];
+                touchX = touch.clientX;
+            });
+
+            canvas.addEventListener('touchend', function(e) {
+                e.preventDefault();
+            });
+
+            canvas.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+
+            restartButton.addEventListener('click', restartGame);
+
+            // Show speed up message animation
+            function showSpeedUpMessage() {
+                speedUpMessage.style.opacity = '1';
+                speedUpMessage.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                
+                setTimeout(() => {
+                    speedUpMessage.style.opacity = '0';
+                    speedUpMessage.style.transform = 'translate(-50%, -50%) scale(1)';
+                }, 2000);
+            }
+
+            // Show ghost hit message animation
+            function showGhostHitMessage() {
+                ghostHitMessage.style.opacity = '1';
+                ghostHitMessage.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                
+                setTimeout(() => {
+                    ghostHitMessage.style.opacity = '0';
+                    ghostHitMessage.style.transform = 'translate(-50%, -50%) scale(1)';
+                }, 2000);
+            }
+
+            // Update score and check for level up
+            function updateScore(points) {
+                const oldScore = score;
+                score += points;
+                scoreElement.textContent = score;
+                
+                // Check for level up (every 1000 points)
+                const oldLevel = Math.floor(oldScore / 1000) + 1;
+                const newLevel = Math.floor(score / 1000) + 1;
+                
+                if (newLevel > oldLevel) {
+                    level = newLevel;
+                    speedMultiplier *= 1.2;
+                    levelElement.textContent = level;
+                    showSpeedUpMessage();
+                }
+            }
+
+            // Create sweet with 1.2x size
+            function createSweet() {
+                const types = Object.keys(sweetTypes);
+                const type = types[Math.floor(Math.random() * types.length)];
+                const sweetType = sweetTypes[type];
+                
+                return {
+                    x: Math.random() * (canvas.width - 62),
+                    y: -62,
+                    width: 62, // 52 * 1.2 = 62.4 ≈ 62
+                    height: 62,
+                    type: type,
+                    speed: sweetType.speed * speedMultiplier,
+                    points: sweetType.points,
+                    color: sweetType.color
+                };
+            }
+
+            // Create ghost
+            function createGhost() {
+                return {
+                    x: Math.random() * (canvas.width - 60),
+                    y: -60,
+                    width: 60,
+                    height: 60,
+                    speed: 5 * speedMultiplier,
+                    animationFrame: 0
+                };
+            }
+
+            // Update random character
+            function updateRandomCharacter(currentTime) {
+                // Change direction randomly
+                if (currentTime - randomCharacter.lastDirectionChange > 800 + Math.random() * 1200) {
+                    const angle = Math.random() * Math.PI * 2;
+                    randomCharacter.direction.x = Math.cos(angle) * (1 + Math.random() * 2);
+                    randomCharacter.direction.y = Math.sin(angle) * (0.5 + Math.random() * 1);
+                    randomCharacter.lastDirectionChange = currentTime;
+                }
+
+                // Update position
+                randomCharacter.x += randomCharacter.direction.x * randomCharacter.speed;
+                randomCharacter.y += randomCharacter.direction.y * randomCharacter.speed;
+
+                // Bounce off walls (horizontal)
+                if (randomCharacter.x <= 0) {
+                    randomCharacter.direction.x = Math.abs(randomCharacter.direction.x);
+                    randomCharacter.x = 0;
+                }
+                if (randomCharacter.x >= canvas.width - randomCharacter.width) {
+                    randomCharacter.direction.x = -Math.abs(randomCharacter.direction.x);
+                    randomCharacter.x = canvas.width - randomCharacter.width;
+                }
+
+                // Keep in upper portion of screen
+                const maxY = canvas.height * 0.5 - randomCharacter.height;
+                if (randomCharacter.y <= 30) {
+                    randomCharacter.direction.y = Math.abs(randomCharacter.direction.y);
+                    randomCharacter.y = 30;
+                }
+                if (randomCharacter.y >= maxY) {
+                    randomCharacter.direction.y = -Math.abs(randomCharacter.direction.y);
+                    randomCharacter.y = maxY;
+                }
+
+                randomCharacter.animationFrame += 0.2;
+            }
+
+            // Draw random character
+            function drawRandomCharacter() {
+                // Only draw if the image is loaded and valid
+                if (randomCharacterImage && randomCharacterImage.complete && randomCharacterImage.naturalWidth > 0) {
+                    const bounceOffset = Math.sin(randomCharacter.animationFrame) * 3;
+                    const drawY = randomCharacter.y + bounceOffset;
+                    ctx.drawImage(randomCharacterImage, randomCharacter.x, drawY, randomCharacter.width, randomCharacter.height);
+                }
+                // If image is not loaded or is invalid, don't draw anything
+            }
+
+            // Update player
+            function updatePlayer() {
+                // Keyboard control
+                if (keys['ArrowLeft'] && player.x > 0) {
+                    player.x -= player.speed;
+                    isUsingTouch = false;
+                }
+                if (keys['ArrowRight'] && player.x < canvas.width - player.width) {
+                    player.x += player.speed;
+                    isUsingTouch = false;
+                }
+                
+                // Mouse/Touch control
+                let targetX = isUsingTouch ? touchX : mouseX;
+                const playerCenterX = targetX;
+                const newPlayerX = playerCenterX - player.width / 2;
+                const clampedX = Math.max(0, Math.min(canvas.width - player.width, newPlayerX));
+                
+                const diff = clampedX - player.x;
+                const moveSpeed = Math.min(Math.abs(diff), player.speed * 2);
+                
+                if (Math.abs(diff) > 2) {
+                    player.x += diff > 0 ? moveSpeed : -moveSpeed;
+                }
+                
+                // Final bounds check
+                player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            }
+
+            // Update sweets
+            function updateSweets() {
+                for (let i = sweets.length - 1; i >= 0; i--) {
+                    const sweet = sweets[i];
+                    sweet.y += sweet.speed;
+                    
+                    // Check collision with player
+                    const hitboxHeight = player.height * 0.3;
+                    if (sweet.x < player.x + player.width &&
+                        sweet.x + sweet.width > player.x &&
+                        sweet.y < player.y + hitboxHeight &&
+                        sweet.y + sweet.height > player.y) {
+                        
+                        updateScore(sweet.points);
+                        sweets.splice(i, 1);
+                        continue;
+                    }
+                    
+                    // Remove sweets that fell off screen
+                    if (sweet.y > canvas.height) {
+                        sweets.splice(i, 1);
+                        lives--;
+                        livesElement.textContent = lives;
+                        
+                        if (lives <= 0) {
+                            gameOver();
+                        }
+                    }
+                }
+            }
+
+            // Update ghosts
+            function updateGhosts() {
+                for (let i = ghosts.length - 1; i >= 0; i--) {
+                    const ghost = ghosts[i];
+                    ghost.y += ghost.speed;
+                    ghost.animationFrame += 0.3;
+                    
+                    // Check collision with player
+                    const hitboxHeight = player.height * 0.3;
+                    if (ghost.x < player.x + player.width &&
+                        ghost.x + ghost.width > player.x &&
+                        ghost.y < player.y + hitboxHeight &&
+                        ghost.y + ghost.height > player.y) {
+                        
+                        // Ghost hit - increase speed only
+                        speedMultiplier *= 1.1;
+                        showGhostHitMessage();
+                        ghosts.splice(i, 1);
+                        continue;
+                    }
+                    
+                    // Remove ghosts that fell off screen
+                    if (ghost.y > canvas.height) {
+                        ghosts.splice(i, 1);
+                    }
+                }
+            }
+
+            // Draw player
+            function drawPlayer() {
+                // Only draw if the image is loaded and valid, or use fallback
+                if (playerImage && playerImage.complete && playerImage.naturalWidth > 0) {
+                    ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+                } else {
+                    // Default character with Halloween theme (only shown if image failed to load)
+                    ctx.fillStyle = '#FF6600';
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+                    
+                    // Eyes
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(player.x + 15, player.y + 15, 12, 12);
+                    ctx.fillRect(player.x + 53, player.y + 15, 12, 12);
+                    
+                    // Pupils
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(player.x + 18, player.y + 18, 6, 6);
+                    ctx.fillRect(player.x + 56, player.y + 18, 6, 6);
+                    
+                    // Mouth
+                    ctx.fillStyle = '#FF4500';
+                    ctx.fillRect(player.x + 25, player.y + 45, 30, 8);
+                }
+            }
+
+            // Draw sweets
+            function drawSweets() {
+                sweets.forEach(function(sweet) {
+                    // Use emoji fallback (larger size)
+                    ctx.font = '38px Arial'; // Increased from 32px to 38px (1.2x)
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const emoji = sweet.type === 'candy' ? '🍬' : sweet.type === 'cookie' ? '🍭' : '🍫';
+                    ctx.fillText(emoji, sweet.x + sweet.width/2, sweet.y + sweet.height/2);
+                });
+            }
+
+            // Draw ghosts
+            function drawGhosts() {
+                ghosts.forEach(function(ghost) {
+                    ctx.font = '36px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Add floating animation
+                    const floatOffset = Math.sin(ghost.animationFrame) * 5;
+                    const drawY = ghost.y + ghost.height/2 + floatOffset;
+                    
+                    ctx.fillText('👻', ghost.x + ghost.width/2, drawY);
+                });
+            }
+
+            // Game loop
+            function gameLoop(currentTime) {
+                if (gameState !== 'playing') return;
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Update
+                updateRandomCharacter(currentTime);
+                updatePlayer();
+                updateSweets();
+                updateGhosts();
+                
+                // Spawn sweets
+                if (currentTime - lastSweetTime > 1000 + Math.random() * 1000) {
+                    sweets.push(createSweet());
+                    lastSweetTime = currentTime;
+                }
+                
+               // Spawn ghosts every 10 seconds
+               if (currentTime - lastGhostTime > 10000) {
+                   ghosts.push(createGhost());
+                   lastGhostTime = currentTime;
+                }                
+                // Draw
+                drawRandomCharacter();
+                drawPlayer();
+                drawSweets();
+                drawGhosts();
+                
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Game over
+            function gameOver() {
+                gameState = 'gameOver';
+                finalScoreElement.textContent = score;
+                finalLevelElement.textContent = level;
+                gameOverDiv.style.display = 'block';
+            }
+
+            // Restart game
+            function restartGame() {
+                gameState = 'playing';
+                score = 0;
+                lives = 3;
+                level = 1;
+                speedMultiplier = 1;
+                sweets = [];
+                ghosts = [];
+                player.x = canvas.width / 2 - player.width / 2;
+                player.y = canvas.height - 120;
+                
+                randomCharacter.x = Math.random() * Math.max(100, canvas.width - randomCharacter.width);
+                randomCharacter.y = 50;
+                randomCharacter.direction.x = (Math.random() - 0.5) * 4;
+                randomCharacter.direction.y = (Math.random() - 0.5) * 2;
+                randomCharacter.lastDirectionChange = 0;
+                randomCharacter.animationFrame = 0;
+                
+                scoreElement.textContent = score;
+                livesElement.textContent = lives;
+                levelElement.textContent = level;
+                gameOverDiv.style.display = 'none';
+                speedUpMessage.style.opacity = '0';
+                ghostHitMessage.style.opacity = '0';
+                lastSweetTime = 0;
+                lastGhostTime = 0;
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Resize handler
+            window.addEventListener('resize', function() {
+                setCanvasSize();
+                player.x = Math.min(player.x, canvas.width - player.width);
+                player.y = canvas.height - 120;
+                randomCharacter.x = Math.min(randomCharacter.x, canvas.width - randomCharacter.width);
+                updateBackgroundForOrientation();
+            });
+            
+            // Orientation change handler
+            window.addEventListener('orientationchange', function() {
+                setTimeout(function() {
+                    setCanvasSize();
+                    updateBackgroundForOrientation();
+                }, 100);
+            });
+
+            // 初期の向きを設定
+            updateBackgroundForOrientation();
+
+        } catch (error) {
+            console.error('Game initialization error:', error);
+            document.body.innerHTML = '<h1 style="color: #ff6600; text-align: center; margin-top: 50px;">ゲームの読み込みに失敗しました。ページを再読み込みしてください。</h1>';
+        }
