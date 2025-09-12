@@ -96,7 +96,7 @@
         
         #startButton {
             background: #ff6600;
-            color: black;
+            color: White;
             border: none;
             padding: 20px 40px;
             font-size: 20px;
@@ -104,6 +104,7 @@
             cursor: pointer;
             transition: all 0.3s;
             border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ← これが影の設定 */
         }
         
         #startButton:hover {
@@ -279,8 +280,9 @@
         <div id="startScreen">
             <h1>🎃 キャンディキャッチゲーム</h1>
             <div class="instructions">
-                <div class="rules">『れいにゃん・せいにゃん』を操作</div>
-                <div class="rules">🍬 キャンディをキャッチしてポイントを獲得</div>
+                <div class="rules">👆『れいにゃん・せいにゃん』を操作</div>
+                <div class="rules">🍬 お菓子をキャッチしてポイントを獲得</div>
+                <div class="rules">🎃お菓子を落とすとライフが−１</div>
                 <div class="warning">👻 おばけに注意！<br>キャッチするとスピードアップ！</div>
                 <div class="rules">💔 ライフが0になるとゲームオーバー</div>
                 <div class="rules">1,000ポイントごとにレベルアップ</div>
@@ -955,6 +957,7 @@
     </script>
 </body>
 </html>
+
 
 
 
