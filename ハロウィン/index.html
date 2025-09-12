@@ -259,7 +259,6 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
         }
     </style>
-
 <!-- Google Analytics（個人情報送信なしの最小限設定） -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKE70Z2MZJ"></script>
 <script>
@@ -278,11 +277,11 @@
 <body>
     <div id="gameContainer">
         <div id="startScreen">
-            <h1>🎃 キャンディキャッチゲーム </h1>
+            <h1>🎃 キャンディキャッチゲーム</h1>
             <div class="instructions">
                 <div class="rules">『れいにゃん・せいにゃん』を操作</div>
-                <div class="rules">🍬 お菓子をキャッチしてポイントを獲得</div>
-                <div class="warning">👻 おばけに注意！キャッチするとライフ-1 & スピードアップ！</div>
+                <div class="rules">🍬 キャンディをキャッチしてポイントを獲得</div>
+                <div class="warning">👻 おばけに注意！キャッチするとスピードアップ！</div>
                 <div class="rules">💔 ライフが0になるとゲームオーバー</div>
                 <div class="rules">1,000ポイントごとにレベルアップ</div>
             </div>
@@ -305,7 +304,7 @@
             <div>🍬 キャンディ: 10点 (遅い)</div>
             <div>🍭 ロリポップ: 30点 (普通)</div>
             <div>🍫 チョコレート: 50点 (速い)</div>
-            <div style="color: #ff4444;">👻 おばけ: ライフ-1</div>
+            <div style="color: #ff4444;">👻 おばけ: スピードアップ</div>
         </div>
         
         <div id="loadingMessage">画像を読み込み中...</div>
@@ -790,16 +789,10 @@
                         ghost.y < player.y + hitboxHeight &&
                         ghost.y + ghost.height > player.y) {
                         
-                        // Ghost hit - lose life and increase speed
-                        lives--;
-                        livesElement.textContent = lives;
+                        // Ghost hit - increase speed only
                         speedMultiplier *= 1.5;
                         showGhostHitMessage();
                         ghosts.splice(i, 1);
-                        
-                        if (lives <= 0) {
-                            gameOver();
-                        }
                         continue;
                     }
                     
@@ -962,7 +955,3 @@
     </script>
 </body>
 </html>
-
-
-
-
