@@ -661,7 +661,7 @@
                     y: -60,
                     width: 60,
                     height: 60,
-                    speed: 0.25 * speedMultiplier,
+                    speed: 5 * speedMultiplier,
                     animationFrame: 0
                 };
             }
@@ -875,11 +875,11 @@
                     lastSweetTime = currentTime;
                 }
                 
-                // Spawn ghosts (less frequently than sweets)
-                if (currentTime - lastGhostTime > 3000 + Math.random() * 2000) {
-                    ghosts.push(createGhost());
-                    lastGhostTime = currentTime;
-                }
+                // Spawn ghosts every 10 seconds
+　　　　　　　　　if (currentTime - lastGhostTime > 10000) {
+    　　　　　　　　　ghosts.push(createGhost());
+    　　　　　　　　　lastGhostTime = currentTime;
+　　　　　　　　　}
                 
                 // Draw
                 drawRandomCharacter();
@@ -955,4 +955,5 @@
     </script>
 </body>
 </html>
+
 
