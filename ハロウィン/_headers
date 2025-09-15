@@ -3,7 +3,7 @@
 
 # 全体的なセキュリティヘッダー
 /*
-  # Content Security Policy - スクリプトとスタイルの実行を制御
+  # Content Security Policy - ゲームに必要な機能を許可
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; media-src 'self'; frame-src 'none'; base-uri 'self'; form-action 'self'
   
   # XSSプロテクション
@@ -14,62 +14,81 @@
   # リファラーポリシー
   Referrer-Policy: strict-origin-when-cross-origin
   
-  # パーミッションポリシー - デバイスアクセスを制限
+  # パーミッションポリシー - ゲームに不要な機能を制限
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), notifications=(), push=(), vibrate=()
   
-  # HTTPSへの強制リダイレクト (HSTS)
+  # HTTPSへの強制リダイレクト (HSTS) - 本番環境のみ
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   
-  # キャッシュ制御
+  # 基本キャッシュ制御
   Cache-Control: public, max-age=3600, must-revalidate
   
   # サーバー情報の隠蔽
   Server: ""
   X-Powered-By: ""
 
-# HTMLファイル用の追加設定
+# HTMLファイル用の設定
 /*.html
-  # HTMLファイルは短時間でキャッシュ
+  # HTMLファイルは短時間でキャッシュ（更新頻度を考慮）
   Cache-Control: public, max-age=300, must-revalidate
-  
+
+# JavaScriptファイル用の設定
+/*.js
+  Cache-Control: public, max-age=604800
+  Content-Type: application/javascript
+
+# CSSファイル用の設定（インラインCSSなので不要だが将来用）
+/*.css
+  Cache-Control: public, max-age=604800
+  Content-Type: text/css
+
 # 画像ファイル用の設定
 /*.jpg
   Cache-Control: public, max-age=2592000
+  Content-Type: image/jpeg
   
 /*.jpeg
   Cache-Control: public, max-age=2592000
-  
+  Content-Type: image/jpeg
+
 /*.png
   Cache-Control: public, max-age=2592000
-  
+  Content-Type: image/png
+
 /*.gif
   Cache-Control: public, max-age=2592000
-  
+  Content-Type: image/gif
+
 /*.webp
   Cache-Control: public, max-age=2592000
+  Content-Type: image/webp
 
-# CSS/JSファイル用の設定
-/*.css
-  Cache-Control: public, max-age=604800
-  
-/*.js
-  Cache-Control: public, max-age=604800
+/*.svg
+  Cache-Control: public, max-age=2592000
+  Content-Type: image/svg+xml
 
 # フォントファイル用の設定
 /*.woff
   Cache-Control: public, max-age=2592000
-  
+  Content-Type: font/woff
+
 /*.woff2
   Cache-Control: public, max-age=2592000
-  
+  Content-Type: font/woff2
+
 /*.ttf
   Cache-Control: public, max-age=2592000
+  Content-Type: font/ttf
 
-# 特定のセキュリティが重要なファイル
+# メインページの設定
 /index.html
-  # ゲームファイルは検索エンジンにインデックスされないように
+  # 検索エンジンからの除外設定
   X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, notranslate, noimageindex
   
   # 追加のセキュリティヘッダー
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
+
+# ルートパスの設定
+/
+  Cache-Control: public, max-age=300, must-revalidate
